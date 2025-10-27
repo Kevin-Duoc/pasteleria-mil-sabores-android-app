@@ -12,30 +12,35 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class AuthRepository(private val usuarioDao: UsuarioDao) {
 
-    // --- Estado del Usuario Actual ---
-    // Usamos MutableStateFlow para guardar quién está logueado.
-    // Empieza como 'null' (nadie logueado).
-    // Es PRIVADO para que solo el repositorio lo pueda cambiar.
     private val _currentUser = MutableStateFlow<Usuario?>(null)
-
-    // Esta es la versión PÚBLICA e INMUTABLE.
-    // Los ViewModels (como ProfileViewModel) observarán este 'Flow'
-    // para saber si hay alguien logueado y reaccionar.
     val currentUser: StateFlow<Usuario?> = _currentUser.asStateFlow()
 
     /**
      * Intenta registrar un nuevo usuario.
+     * Si es exitoso, INICIA SESIÓN automáticamente con ese usuario.
      * Devuelve 'true' si fue exitoso, 'false' si el email ya existe.
      */
     suspend fun register(nombre: String, email: String, contrasena: String): Boolean {
         return try {
+            // Creamos el objeto Usuario (el ID será 0 inicialmente)
             val nuevoUsuario = Usuario(nombre = nombre, email = email, contrasena = contrasena)
+            // Intentamos insertarlo en la base de datos
             usuarioDao.insertUsuario(nuevoUsuario)
-            // Si insertUsuario no lanzó excepción (email no repetido), fue exitoso.
-            true
+
+            // --- 👇 LÍNEA NUEVA AÑADIDA 👇 ---
+            // Si la inserción fue exitosa (no hubo excepción),
+            // actualizamos el estado para iniciar sesión con este nuevo usuario.
+            // Nota: '_currentUser' tendrá el ID=0, lo cual está bien para la sesión,
+            // pero si necesitáramos el ID real asignado por la BD, tendríamos
+            // que volver a buscarlo con getUsuarioByEmail. Para este caso, no es necesario.
+            _currentUser.value = nuevoUsuario
+            // --- 👆 FIN DE LÍNEA NUEVA 👆 ---
+
+            true // Devolvemos 'true' indicando éxito
         } catch (e: Exception) {
             // Si hubo una excepción (probablemente email duplicado), falló.
-            false
+            _currentUser.value = null // Aseguramos que nadie quede logueado por error
+            false // Devolvemos 'false'
         }
     }
 
@@ -52,7 +57,7 @@ class AuthRepository(private val usuarioDao: UsuarioDao) {
             true
         } else {
             // Credenciales incorrectas o email no encontrado.
-            _currentUser.value = null // Aseguramos que nadie quede logueado por error
+            _currentUser.value = null
             false
         }
     }
@@ -66,7 +71,6 @@ class AuthRepository(private val usuarioDao: UsuarioDao) {
 
     /**
      * Función simple para verificar si hay alguien logueado.
-     * (Útil para proteger rutas o mostrar/ocultar botones)
      */
     fun isUserLoggedIn(): Boolean {
         return _currentUser.value != null

@@ -28,8 +28,8 @@ class MainActivity : ComponentActivity() {
 
                     composable(Routes.MAIN) { MainScreen(navController) }
                     composable(Routes.PRODUCTS) { ProductListScreen(navController) }
-                    composable(Routes.LOGIN) { LoginScreen(/*navController*/) }
-                    composable(Routes.REGISTER) { RegisterScreen(/*navController*/) }
+                    composable(Routes.LOGIN) { LoginScreen(navController) }
+                    composable(Routes.REGISTER) { RegisterScreen(navController) }
                     composable(
                         route = Routes.PRODUCT_DETAIL,
                         arguments = listOf(navArgument("productId") {type = NavType.StringType })
