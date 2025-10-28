@@ -20,10 +20,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             PasteleriaMilSabores_Grupo9Theme {
-                //El controlador de navegación
                 val navController = rememberNavController()
 
-                // NavHost es el contenedor que mostrará la pantalla actual
                 NavHost(navController = navController, startDestination = Routes.MAIN) {
 
                     composable(Routes.MAIN) { MainScreen(navController) }

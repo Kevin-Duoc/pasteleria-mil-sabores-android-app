@@ -109,7 +109,7 @@ fun MainScreen(mainNavController: NavController) { // Este es el NavController p
                 ProductListScreen(navController = mainNavController)
             }
             composable(BottomNavItem.Carrito.route) {
-                CartScreen() // No necesita el NavController principal (por ahora)
+                CartScreen(navController = mainNavController) // No necesita el NavController principal (por ahora)
             }
             composable(BottomNavItem.Cuenta.route) {
                 // --- 👇 AQUÍ ESTÁ EL CAMBIO 👇 ---

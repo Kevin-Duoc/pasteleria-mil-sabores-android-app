@@ -6,8 +6,8 @@ import com.example.pasteleriamilsabores_grupo9.data.model.Producto
 import kotlinx.coroutines.flow.Flow
 
 /**
- * El Repositorio (Gerente) del Carrito.
- * Es el único que tiene acceso al 'CarritoDao' (el Portero).
+ * El Repositorio del Carrito.
+ * Es el único que tiene acceso al 'CarritoDao'.
  */
 class CarritoRepository(private val carritoDao: CarritoDao) {
 
@@ -18,17 +18,14 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
     val allCartItems: Flow<List<ItemCarrito>> = carritoDao.getAllItems()
 
     /**
-     * Esta es la LÓGICA DE NEGOCIO principal.
      * Revisa si un producto ya existe en el carrito.
      * Si existe, actualiza la cantidad.
      * Si no existe, inserta un nuevo item.
      */
     suspend fun addItemToCart(producto: Producto, cantidad: Int) {
-        // 1. Revisa si el item ya existe usando el Product ID
         val itemExistente = carritoDao.getItemByProductId(producto.id)
 
         if (itemExistente == null) {
-            // 2. Si NO existe, crea un nuevo ItemCarrito y lo inserta
             val newItem = ItemCarrito(
                 productId = producto.id,
                 nombre = producto.nombre,
@@ -37,7 +34,6 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
             )
             carritoDao.insertItem(newItem)
         } else {
-            // 3. Si YA existe, crea una copia actualizada con la nueva cantidad
             val updatedItem = itemExistente.copy(
                 cantidad = itemExistente.cantidad + cantidad
             )
@@ -46,7 +42,7 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
     }
 
     /**
-     * Simplemente le pide al DAO que actualice un item.
+     * Le pide al DAO que actualice un item.
      * (Útil para botones +/- en la pantalla del carrito)
      */
     suspend fun updateItem(item: ItemCarrito) {
@@ -54,14 +50,14 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
     }
 
     /**
-     * Simplemente le pide al DAO que elimine un item.
+     * Le pide al DAO que elimine un item.
      */
     suspend fun deleteItem(item: ItemCarrito) {
         carritoDao.deleteItem(item)
     }
 
     /**
-     * Simplemente le pide al DAO que vacíe el carrito.
+     * Le pide al DAO que vacíe el carrito.
      */
     suspend fun clearCart() {
         carritoDao.clearCart()

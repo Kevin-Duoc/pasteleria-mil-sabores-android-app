@@ -4,36 +4,52 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.pasteleriamilsabores_grupo9.data.model.ItemCarrito
+import com.example.pasteleriamilsabores_grupo9.repository.AuthRepository
 import com.example.pasteleriamilsabores_grupo9.repository.CarritoRepository
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class CartViewModel(private val carritoRepository: CarritoRepository) : ViewModel() {
+class CartViewModel(
+    private val carritoRepository: CarritoRepository,
+    private val authRepository: AuthRepository // <-- 2. AÑADIR AuthRepository
+) : ViewModel() {
 
-    // 1. Conectamos el 'Flow' de todos los items del carrito a un 'StateFlow'
-    //    que la UI (CartScreen) podrá observar.
+    // 1. Estado de los items del carrito (se queda igual)
     val cartItems: StateFlow<List<ItemCarrito>> = carritoRepository.allCartItems
         .stateIn(
             scope = viewModelScope,
-            started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList() // Empezamos con una lista vacía
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
         )
 
-    // 2. Función para actualizar la cantidad de un item
+    // --- 3. NUEVO ESTADO: ¿Está el usuario conectado? ---
+    /**
+     * Observa el 'currentUser' del AuthRepository y lo transforma
+     * en un simple Boolean (true si hay usuario, false si no).
+     * La UI observará ESTE estado para saber si habilitar el botón "Pagar".
+     */
+    val isUserLoggedIn: StateFlow<Boolean> = authRepository.currentUser
+        .map { it != null } // Transforma Usuario? a Boolean
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false // Asumimos que no está logueado al principio
+        )
+
+    // (Las funciones updateItemQuantity y deleteItem se quedan igual)
     fun updateItemQuantity(item: ItemCarrito, newQuantity: Int) {
         viewModelScope.launch {
             if (newQuantity > 0) {
-                // Creamos una copia del item con la nueva cantidad y la actualizamos
                 carritoRepository.updateItem(item.copy(cantidad = newQuantity))
             } else {
-                // Si la cantidad es 0 o menos, eliminamos el item
                 carritoRepository.deleteItem(item)
             }
         }
     }
 
-    // 3. Función para eliminar un item directamente
     fun deleteItem(item: ItemCarrito) {
         viewModelScope.launch {
             carritoRepository.deleteItem(item)
@@ -43,16 +59,17 @@ class CartViewModel(private val carritoRepository: CarritoRepository) : ViewMode
 
 /**
  * Fábrica (Factory) para crear el CartViewModel.
- * Es necesaria porque nuestro ViewModel pide un 'carritoRepository'
- * en su constructor.
+ * Ahora necesita AMBOS repositorios.
  */
 class CartViewModelFactory(
-    private val carritoRepository: CarritoRepository
+    private val carritoRepository: CarritoRepository,
+    private val authRepository: AuthRepository // <-- 4. AÑADIR AuthRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CartViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CartViewModel(carritoRepository) as T
+            // 5. Pasamos AMBOS repositorios al constructor del ViewModel
+            return CartViewModel(carritoRepository, authRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

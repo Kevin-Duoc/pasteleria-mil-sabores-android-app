@@ -10,11 +10,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Data class para guardar el estado de la pantalla de Login
 data class LoginUiState(
-    val isLoading: Boolean = false, // ¿Está cargando?
-    val error: String? = null, // Guarda mensajes de error para la UI
-    val isSuccess: Boolean = false // Se vuelve true si el login fue exitoso
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val isSuccess: Boolean = false
 )
 
 class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
@@ -29,7 +28,6 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
      * Actualiza el estado de la UI según el resultado.
      */
     fun login(email: String, contrasena: String) {
-        // Validación básica
         if (email.isBlank() || contrasena.isBlank()) {
             _uiState.update { it.copy(error = "Correo y contraseña son obligatorios.") }
             return

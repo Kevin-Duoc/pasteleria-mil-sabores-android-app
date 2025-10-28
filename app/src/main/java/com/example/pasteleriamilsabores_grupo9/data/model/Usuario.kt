@@ -5,15 +5,9 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * Define la tabla 'usuarios' en la base de datos.
- *
- * Añadimos un "índice único" al email para asegurarnos
- * de que no puedan existir dos usuarios con el mismo email.
- */
 @Entity(
     tableName = "usuarios",
-    indices = [Index(value = ["email"], unique = true)] // Regla de BD: no emails repetidos
+    indices = [Index(value = ["email"], unique = true)] //no emails repetidos
 )
 data class Usuario(
     // ID autoincremental para el usuario
@@ -27,9 +21,6 @@ data class Usuario(
     @ColumnInfo(name = "email")
     val email: String,
 
-    // Guardaremos la contraseña.
-    // (En una app real, esto debería estar encriptado,
-    // pero para este proyecto lo guardamos como texto simple).
     @ColumnInfo(name = "contrasena")
     val contrasena: String
 )

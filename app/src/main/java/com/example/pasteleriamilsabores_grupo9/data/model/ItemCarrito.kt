@@ -29,13 +29,9 @@ data class ItemCarrito(
     @ColumnInfo(name = "item_id")
     val itemId: Int = 0,
 
-    // El ID del producto (de la tabla 'productos') al que se refiere
     @ColumnInfo(name = "producto_id", index = true) // 'index = true' optimiza las búsquedas
     val productId: String,
 
-    // Guardamos copias de estos datos para un acceso rápido en el carrito,
-    // aunque técnicamente podríamos obtenerlos "uniendo" las tablas.
-    // Esto se llama "desnormalización" y es útil en apps móviles.
     @ColumnInfo(name = "nombre_producto")
     val nombre: String,
 
