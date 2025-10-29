@@ -25,55 +25,38 @@ import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Gru
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductDetailViewModel
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductDetailViewModelFactory
 
-/**
- * Pantalla "Inteligente" (Smart Composable).
- * Se encarga de la lógica: obtener el ViewModel y los datos.
- */
 @Composable
 fun ProductDetailScreen(
     navController: NavController,
     productId: String?,
 ) {
-    // --- 4. INYECCIÓN DE DEPENDENCIA MANUAL ---
     val context = LocalContext.current
-    // --- 1. Obtenemos la application una sola vez ---
     val application = context.applicationContext as PasteleriaApplication
-
-    // --- 2. Pasamos AMBOS repositorios a la Fábrica ---
     val factory = ProductDetailViewModelFactory(
         application.productoRepository,
-        application.carritoRepository // <-- ESTA LÍNEA FALTABA
+        application.carritoRepository
     )
 
-    // Inyectamos la fábrica para crear el ViewModel
     val productDetailViewModel: ProductDetailViewModel = viewModel(factory = factory)
 
-    // Observamos el estado del producto
     val product by productDetailViewModel.product.collectAsState()
 
-    // Efecto para cargar el producto CADA VEZ que el productId cambie
     LaunchedEffect(productId) {
         if (productId != null) {
             productDetailViewModel.loadProductById(productId)
         }
     }
 
-    // 5. Llamamos al Composable "tonto" que solo dibuja la UI
     ProductDetailContent(
         product = product,
         navController = navController,
         productId = productId,
         onAddToCart = { p, q ->
-            // --- 3. Conectamos el callback al ViewModel ---
-            productDetailViewModel.onAddToCartClicked(p, q) // <-- REEMPLAZAMOS EL TODO
+            productDetailViewModel.onAddToCartClicked(p, q)
         }
     )
 }
 
-/**
- * Pantalla "Tonta" (Dumb Composable).
- * (Esta función no necesita cambios, se queda igual)
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailContent(
@@ -155,7 +138,7 @@ fun ProductDetailContent(
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
-                        onAddToCart(p, quantity) // <-- Esta línea llama al callback
+                        onAddToCart(p, quantity)
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     enabled = p.stock > 0
@@ -179,7 +162,6 @@ fun ProductDetailContent(
     }
 }
 
-// (Esta función se queda igual)
 fun Int.formatPrice(): String {
     return this.toString().reversed().chunked(3).joinToString(".").reversed()
 }
@@ -188,7 +170,6 @@ fun Int.formatPrice(): String {
 @Preview(showBackground = true)
 @Composable
 fun ProductDetailScreenPreview() {
-    // (Esta función se queda igual)
     val fakeProduct = Producto(
         id = "P1",
         nombre = "Torta de Chocolate (Preview)",

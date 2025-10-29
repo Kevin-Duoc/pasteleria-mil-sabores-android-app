@@ -2,8 +2,8 @@ package com.example.pasteleriamilsabores_grupo9.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Paleta de Colores de "1000 Sabores" - Modo Claro
 val CremaPastel = Color(0xFFFFF5E1) // Fondo principal
+val CremaOscuro = Color(0xFFF5E8D6)
 val MarronOscuro = Color(0xFF5D4037) // Texto principal (sobre el fondo crema)
 val Chocolate = Color(0xFF8B4513)    // Títulos y botones principales (Login)
 val MarronClaro = Color(0xFF6B3A1C)    // Acentos (links) y hover de botones

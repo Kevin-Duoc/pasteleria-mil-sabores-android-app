@@ -5,41 +5,84 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.pasteleriamilsabores_grupo9.data.model.Producto
 import com.example.pasteleriamilsabores_grupo9.repository.ProductoRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+
+object Categorias {
+    const val VER_TODO = "Ver Todo"
+    const val TORTAS = "Tortas"
+    const val POSTRES = "Postres"
+    const val SIN_AZUCAR = "Sin Azúcar"
+    const val SIN_GLUTEN = "Sin Gluten"
+    const val VEGANO = "Vegano"
+}
 
 class ProductListViewModel(repository: ProductoRepository) : ViewModel() {
 
-    // --- 4. Conectamos el Flow del Repositorio directamente a la UI ---
-    /**
-     * Esta es la parte genial. Ya NO necesitamos un 'MutableStateFlow' privado
-     * ni una función 'loadProducts()'.
-     *
-     * 'repository.allProductos' es el 'Flow' que viene del DAO.
-     * Usamos '.stateIn' para convertir ese "chorro" de datos (Flow)
-     * en un 'StateFlow' (un estado) que la UI pueda observar.
-     *
-     * Se actualizará solo, automáticamente, si algo cambia en la BD.
-     */
-    val products: StateFlow<List<Producto>> = repository.allProductos
-        .stateIn(
-            scope = viewModelScope, // El 'scope' de este ViewModel
-            started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), // Cuándo empezar a "escuchar"
-            initialValue = emptyList() // Qué mostrar mientras se cargan los datos
-        )
+    private val _selectedCategories = MutableStateFlow<Set<String>>(setOf(Categorias.VER_TODO))
+    val selectedCategories: StateFlow<Set<String>> = _selectedCategories.asStateFlow()
+
+    private val _maxPrice = MutableStateFlow(60000f)
+    val maxPrice: StateFlow<Float> = _maxPrice.asStateFlow()
+
+    // --- LISTA FILTRADA (LÓGICA "O" - OR) ---
+    val products: StateFlow<List<Producto>> = combine(
+        repository.allProductos,
+        _selectedCategories,
+        _maxPrice
+    ) { allProducts, categories, price ->
+
+        val priceFiltered = allProducts.filter { it.precio <= price }
+
+        if (categories.contains(Categorias.VER_TODO) || categories.isEmpty()) {
+            priceFiltered
+        } else {
+            priceFiltered.filter { producto ->
+                categories.any { category ->
+                    when (category) {
+                        Categorias.TORTAS -> producto.id.startsWith("TC") || producto.id.startsWith("TT") || producto.id.startsWith("TE") || producto.id.startsWith("PSA") || producto.id.startsWith("PV")
+                        Categorias.POSTRES -> producto.id.startsWith("PI") || producto.id.startsWith("PT") || producto.id.startsWith("PG")
+                        Categorias.SIN_AZUCAR -> producto.id.startsWith("PSA")
+                        Categorias.SIN_GLUTEN -> producto.id.startsWith("PG")
+                        Categorias.VEGANO -> producto.id.startsWith("PV")
+                        else -> false
+                    }
+                }
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun updatePrice(newPrice: Float) {
+        _maxPrice.value = newPrice
+    }
+
+    fun updateCategory(category: String, isSelected: Boolean) {
+        _selectedCategories.value = _selectedCategories.value.toMutableSet().apply {
+            if (category == Categorias.VER_TODO) {
+                clear()
+                add(Categorias.VER_TODO)
+            } else {
+                if (isSelected) {
+                    add(category)
+                    remove(Categorias.VER_TODO)
+                } else {
+                    remove(category)
+                }
+                if (isEmpty()) {
+                    add(Categorias.VER_TODO)
+                }
+            }
+        }
+    }
 }
 
-
-// --- 5. AÑADIMOS UNA FÁBRICA (FACTORY) ---
-/**
- * ¿Por qué esto?
- * Porque nuestro ViewModel ya no tiene un constructor vacío (ahora pide un 'repository').
- * Android no sabe cómo crear este ViewModel por sí solo.
- *
- * Esta "Fábrica" es una clase que le dice a Android:
- * "Oye, para crear un 'ProductListViewModel', toma este 'repository' que te paso
- * y úsalo en su constructor".
- */
 class ProductListViewModelFactory(
     private val repository: ProductoRepository
 ) : ViewModelProvider.Factory {

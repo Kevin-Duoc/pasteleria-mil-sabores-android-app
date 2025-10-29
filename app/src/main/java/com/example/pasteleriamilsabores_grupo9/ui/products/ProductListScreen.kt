@@ -1,7 +1,14 @@
 package com.example.pasteleriamilsabores_grupo9.ui.products
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -16,62 +23,46 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.pasteleriamilsabores_grupo9.PasteleriaApplication // <-- 1. IMPORTAMOS LA APPLICATION
+import com.example.pasteleriamilsabores_grupo9.PasteleriaApplication
 import com.example.pasteleriamilsabores_grupo9.data.model.Producto
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductListViewModel
-import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductListViewModelFactory // <-- 2. IMPORTAMOS LA FACTORY
+import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductListViewModelFactory
 
-/**
- * Esta es la pantalla "inteligente" (Smart Composable).
- * Su ÚNICA responsabilidad es obtener los datos (el ViewModel)
- * y pasárselos a la pantalla "tonta" que solo dibuja la UI.
- */
 @Composable
 fun ProductListScreen(
     navController: NavController,
+    productListViewModel: ProductListViewModel
 ) {
-    // --- 3. INYECCIÓN DE DEPENDENCIA MANUAL ---
-    // Obtenemos el contexto actual
-    val context = LocalContext.current
-    // Creamos la Fábrica, pasándole el repositorio desde nuestra Application
-    val factory = ProductListViewModelFactory(
-        (context.applicationContext as PasteleriaApplication).productoRepository
-    )
-    // 4. Inyectamos la fábrica en la función viewModel()
-    val productListViewModel: ProductListViewModel = viewModel(factory = factory)
-
-    // Observamos el estado 'products' del ViewModel
     val products by productListViewModel.products.collectAsState()
-
-    // 5. Llamamos al Composable "tonto" que solo dibuja la UI
     ProductListContent(products = products, navController = navController)
 }
 
-/**
- * Esta es la pantalla "tonta" (Dumb Composable).
- * No sabe de dónde vienen los datos, solo los recibe y los dibuja.
- * Esto hace que sea fácil de probar y previsualizar.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListContent(
     products: List<Producto>,
     navController: NavController
 ) {
-    // Este Scaffold y LazyVerticalGrid es el mismo código que tenías
-    Scaffold(topBar = { TopAppBar(title = { Text("Productos") }) }) { paddingValues ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 8.dp)
+    ) {
+        Text(
+            text = "Productos",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 8.dp)
+        )
+
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(8.dp),
+            columns = GridCells.Adaptive(minSize = 160.dp),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 8.dp)
         ) {
             items(products) { producto ->
                 ProductCard(producto = producto, onClick = {
@@ -82,21 +73,25 @@ fun ProductListContent(
     }
 }
 
-// Composable para mostrar una tarjeta de producto individual
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductCard(producto: Producto, onClick: () -> Unit) {
     val context = LocalContext.current
-
     @Composable
     fun getDrawableResourceId(name: String): Int {
         return remember(name) {
-            context.resources.getIdentifier(name.lowercase(), "drawable", context.packageName)
+            try {
+                context.resources.getIdentifier(
+                    name.lowercase(),
+                    "drawable",
+                    context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
+                )
+            } catch (e: Exception) { 0 }
         }
     }
-
     val imageResId = getDrawableResourceId(producto.imagenResIdName)
-    val finalImageResId = if (imageResId == 0) getDrawableResourceId("placeholder_image") else imageResId
+    val placeholderResId = getDrawableResourceId("placeholder_image")
+    val finalImageResId = if (imageResId != 0) imageResId else if (placeholderResId != 0) placeholderResId else android.R.drawable.ic_menu_gallery
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -105,11 +100,9 @@ fun ProductCard(producto: Producto, onClick: () -> Unit) {
     ) {
         Column {
             Image(
-                painter = painterResource(id = if (finalImageResId != 0) finalImageResId else android.R.drawable.ic_menu_gallery),
+                painter = painterResource(id = finalImageResId),
                 contentDescription = producto.nombre,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                modifier = Modifier.fillMaxWidth().height(120.dp),
                 contentScale = ContentScale.Crop
             )
             Column(modifier = Modifier.padding(12.dp)) {
@@ -129,24 +122,20 @@ fun ProductCard(producto: Producto, onClick: () -> Unit) {
     }
 }
 
-// Función de extensión para formatear el precio
 fun Int.formatPrice(): String {
-    return this.toString().reversed().chunked(3).joinToString(".").reversed()
+    return try {
+        this.toString().reversed().chunked(3).joinToString(".").reversed()
+    } catch (e: Exception) { this.toString() }
 }
-
 
 @Preview(showBackground = true)
 @Composable
 fun ProductListScreenPreview() {
-    // --- 6. PREVIEW ARREGLADA ---
-    // 1. Creamos una lista falsa SOLO para la preview
-    val fakeProducts = listOf(
+    val fakeProductsPreview = listOf(
         Producto("P1", "Torta de Chocolate", "Desc", 10000, "torta_cuadrada_chocolate", 5, 2),
         Producto("P2", "Torta de Vainilla", "Desc", 20000, "torta_circular_vainilla", 5, 2)
     )
-
     PasteleriaMilSabores_Grupo9Theme {
-        // 2. Llamamos al Composable "tonto" con la lista falsa
-        ProductListContent(products = fakeProducts, navController = rememberNavController())
+        ProductListContent(products = fakeProductsPreview, navController = rememberNavController())
     }
 }
