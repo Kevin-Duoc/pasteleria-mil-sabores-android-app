@@ -31,5 +31,8 @@ data class ItemCarrito(
     val precio: Int,
 
     @ColumnInfo(name = "cantidad")
-    val cantidad: Int
+    val cantidad: Int,
+
+    @ColumnInfo(name = "imagen_res_name")
+    val imagenResIdName: String
 )

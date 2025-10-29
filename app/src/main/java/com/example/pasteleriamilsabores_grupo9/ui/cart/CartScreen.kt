@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -117,21 +118,33 @@ fun CartItemRow(
     onUpdateQuantity: (Int) -> Unit
 ) {
     val context = LocalContext.current
-    val placeholderImageResId = remember {
-        var resId = 0
+
+    val imageResId = remember(item.imagenResIdName) {
         try {
-            val packageName = context.packageName
-            if (packageName.isNotEmpty()) {
-                resId = context.resources.getIdentifier(
-                    "placeholder_image",
-                    "drawable",
-                    packageName
-                )
-            }
-        } catch (e: Exception) {
-            resId = 0 // Asegurar que sea 0 si hay error
-        }
-        if (resId == 0) android.R.drawable.ic_menu_gallery else resId
+            context.resources.getIdentifier(
+                item.imagenResIdName.lowercase(),
+                "drawable",
+                context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
+            )
+        } catch (e: Exception) { 0 }
+    }
+
+    val placeholderImageResId = remember {
+        try {
+            context.resources.getIdentifier(
+                "placeholder_image",
+                "drawable",
+                context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
+            )
+        } catch (e: Exception) { 0 }
+    }
+
+    val finalImageResId = if (imageResId != 0) {
+        imageResId
+    } else if (placeholderImageResId != 0) {
+        placeholderImageResId
+    } else {
+        android.R.drawable.ic_menu_gallery
     }
 
     Card(
@@ -143,7 +156,7 @@ fun CartItemRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = placeholderImageResId),
+                painter = painterResource(id = finalImageResId),
                 contentDescription = item.nombre,
                 modifier = Modifier.size(80.dp).padding(end = 16.dp),
                 contentScale = ContentScale.Crop
@@ -233,8 +246,8 @@ fun Int.formatPrice(): String {
 }
 
 private val fakeItemsPreview = listOf(
-    ItemCarrito(itemId=1, productId = "P1", nombre = "Torta de Chocolate", precio = 45000, cantidad = 1),
-    ItemCarrito(itemId=2, productId = "P2", nombre = "Mousse de Chocolate", precio = 5000, cantidad = 3)
+    ItemCarrito(itemId=1, productId = "P1", nombre = "Torta de Chocolate", precio = 45000, cantidad = 1, imagenResIdName = "torta_cuadrada_chocolate"),
+    ItemCarrito(itemId=2, productId = "P2", nombre = "Mousse de Chocolate", precio = 5000, cantidad = 3, imagenResIdName = "mousse_chocolate")
 )
 
 @Preview(showBackground = true, name = "Carrito Lleno - Logueado")

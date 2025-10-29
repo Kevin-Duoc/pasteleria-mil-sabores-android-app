@@ -17,7 +17,8 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
                 productId = producto.id,
                 nombre = producto.nombre,
                 precio = producto.precio,
-                cantidad = cantidad
+                cantidad = cantidad,
+                imagenResIdName = producto.imagenResIdName
             )
             carritoDao.insertItem(newItem)
         } else {
