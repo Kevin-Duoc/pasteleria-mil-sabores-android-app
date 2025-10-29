@@ -6,39 +6,47 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.example.pasteleriamilsabores_grupo9.R // <-- 1. IMPORTANTE, AÑADIR ESTO
+import com.example.pasteleriamilsabores_grupo9.R
 
-// 2. Definimos la nueva familia de fuentes "Lobster"
-//    R.font.lobster_regular es el ID que Android genera
-//    automáticamente para tu archivo en res/font.
+// Fuente Lobster (igual que antes)
 val lobsterFamily = FontFamily(
     Font(R.font.lobster_regular, FontWeight.Normal)
-    // (Aquí podríamos añadir una versión "Bold" si la tuviéramos)
 )
 
-// 3. Actualizamos 'Typography' para usar la fuente
+// Tipografía actualizada
 val Typography = Typography(
+    // Estilo para texto normal (igual que antes)
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default, // El cuerpo sigue siendo normal
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
-
-    // --- AÑADIMOS ESTOS ESTILOS NUEVOS ---
-
-    // Lo usaremos para el título en la barra superior
-    titleLarge = TextStyle(
-        fontFamily = lobsterFamily, // Usamos Lobster
-        fontWeight = FontWeight.Normal,
-        fontSize = 24.sp // Un buen tamaño para la barra
-    ),
-
-    // (Opcional) Un estilo para títulos más grandes en las pantallas
+    // Estilo para el título principal (Lobster, igual que antes)
     headlineLarge = TextStyle(
-        fontFamily = lobsterFamily, // Usamos Lobster
+        fontFamily = lobsterFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 32.sp
-    )
+    ),
+    // Estilo para el título en la barra superior (Lobster, igual que antes)
+    titleLarge = TextStyle(
+        fontFamily = lobsterFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 24.sp
+    ),
+
+    // --- 👇 NUEVO ESTILO AÑADIDO/MODIFICADO 👇 ---
+    // Estilo para títulos secundarios (como "Productos") y texto destacado (como "Total:")
+    // Usa la fuente NORMAL pero en NEGRITA y un tamaño mediano.
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.Default, // Fuente Normal
+        fontWeight = FontWeight.Bold,   // Negrita
+        fontSize = 20.sp, // Tamaño mediano (ajusta si prefieres otro)
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    // --- 👆 FIN DE NUEVO ESTILO 👆 ---
+
+    // (Podríamos definir más estilos como bodyMedium, labelSmall, etc. si los necesitáramos)
 )

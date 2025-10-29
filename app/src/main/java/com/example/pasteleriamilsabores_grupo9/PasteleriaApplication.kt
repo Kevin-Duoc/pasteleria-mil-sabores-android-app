@@ -11,9 +11,6 @@ import com.example.pasteleriamilsabores_grupo9.data.sampleProductos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/**
- * Clase Application personalizada.
- */
 class PasteleriaApplication : Application() {
 
     val applicationScope = CoroutineScope(SupervisorJob())

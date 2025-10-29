@@ -14,10 +14,9 @@ import kotlinx.coroutines.launch
 
 class ProductDetailViewModel(
     private val productoRepository: ProductoRepository,
-    private val carritoRepository: CarritoRepository // <-- 2. AÑADIR REPO DE CARRITO
+    private val carritoRepository: CarritoRepository
 ) : ViewModel() {
 
-    // Estado para guardar el producto encontrado (puede ser nulo si no se encuentra)
     private val _product = MutableStateFlow<Producto?>(null)
     val product: StateFlow<Producto?> = _product.asStateFlow()
 
@@ -29,24 +28,13 @@ class ProductDetailViewModel(
         }
     }
 
-    /**
-     * Esta función será llamada desde la UI (la pantalla).
-     * Lanza una corutina y le pide al 'carritoRepository' que
-     * añada el producto con la cantidad seleccionada.
-     */
     fun onAddToCartClicked(producto: Producto, cantidad: Int) {
         viewModelScope.launch {
             carritoRepository.addItemToCart(producto, cantidad)
-            // (Opcional) Aquí podríamos añadir un 'StateFlow' para
-            // mostrar un mensaje de "¡Añadido!" en la pantalla.
         }
     }
 }
 
-/**
- * La Fábrica ahora necesita AMBOS repositorios
- * para poder construir el ProductDetailViewModel.
- */
 class ProductDetailViewModelFactory(
     private val productoRepository: ProductoRepository,
     private val carritoRepository: CarritoRepository

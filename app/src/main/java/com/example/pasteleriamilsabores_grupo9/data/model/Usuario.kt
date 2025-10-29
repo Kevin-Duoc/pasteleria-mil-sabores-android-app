@@ -7,10 +7,9 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "usuarios",
-    indices = [Index(value = ["email"], unique = true)] //no emails repetidos
+    indices = [Index(value = ["email"], unique = true)]
 )
 data class Usuario(
-    // ID autoincremental para el usuario
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "usuario_id")
     val id: Int = 0,

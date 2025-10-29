@@ -18,15 +18,9 @@ data class LoginUiState(
 
 class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
-    // Estado interno mutable
     private val _uiState = MutableStateFlow(LoginUiState())
-    // Estado público inmutable
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    /**
-     * Intenta iniciar sesión con email y contraseña.
-     * Actualiza el estado de la UI según el resultado.
-     */
     fun login(email: String, contrasena: String) {
         if (email.isBlank() || contrasena.isBlank()) {
             _uiState.update { it.copy(error = "Correo y contraseña son obligatorios.") }
@@ -37,32 +31,23 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             return
         }
 
-        // Iniciar estado de carga
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
             val success = authRepository.login(email, contrasena)
             if (success) {
-                // Actualizar estado en caso de éxito
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
-                // Actualizar estado en caso de fallo (credenciales incorrectas)
                 _uiState.update { it.copy(isLoading = false, error = "Correo o contraseña incorrectos.") }
             }
         }
     }
 
-    /**
-     * Reinicia el mensaje de error.
-     */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
 }
 
-/**
- * Fábrica para crear el LoginViewModel.
- */
 class LoginViewModelFactory(
     private val authRepository: AuthRepository
 ) : ViewModelProvider.Factory {

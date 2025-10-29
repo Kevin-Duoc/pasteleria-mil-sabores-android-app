@@ -8,12 +8,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.pasteleriamilsabores_grupo9.ui.MainScreen
 import com.example.pasteleriamilsabores_grupo9.ui.detail.ProductDetailScreen
 import com.example.pasteleriamilsabores_grupo9.ui.login.LoginScreen
-import com.example.pasteleriamilsabores_grupo9.ui.products.ProductListScreen
 import com.example.pasteleriamilsabores_grupo9.ui.register.RegisterScreen
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
-import com.example.pasteleriamilsabores_grupo9.ui.MainScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,9 +24,10 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = Routes.MAIN) {
 
                     composable(Routes.MAIN) { MainScreen(navController) }
-                    composable(Routes.PRODUCTS) { ProductListScreen(navController) }
+
                     composable(Routes.LOGIN) { LoginScreen(navController) }
                     composable(Routes.REGISTER) { RegisterScreen(navController) }
+
                     composable(
                         route = Routes.PRODUCT_DETAIL,
                         arguments = listOf(navArgument("productId") {type = NavType.StringType })

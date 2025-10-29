@@ -21,10 +21,6 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    /**
-     * Intenta registrar un usuario.
-     * Actualiza el estado de la UI según el resultado (cargando, éxito, error).
-     */
     fun register(nombre: String, email: String, contrasena: String) {
         if (nombre.isBlank() || email.isBlank() || contrasena.isBlank()) {
             _uiState.update { it.copy(error = "Todos los campos son obligatorios.") }
@@ -51,17 +47,11 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
         }
     }
 
-    /**
-     * Reinicia el mensaje de error, típicamente llamado después de que la UI lo muestra.
-     */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
 }
 
-/**
- * Fábrica para crear el RegisterViewModel.
- */
 class RegisterViewModelFactory(
     private val authRepository: AuthRepository
 ) : ViewModelProvider.Factory {

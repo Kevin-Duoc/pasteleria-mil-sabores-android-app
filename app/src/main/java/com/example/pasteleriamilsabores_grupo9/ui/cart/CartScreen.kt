@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,12 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.pasteleriamilsabores_grupo9.PasteleriaApplication
 import com.example.pasteleriamilsabores_grupo9.Routes
 import com.example.pasteleriamilsabores_grupo9.data.model.ItemCarrito
@@ -44,7 +46,7 @@ fun CartScreen(
     val isLoggedIn by viewModel.isUserLoggedIn.collectAsState()
 
     val total = remember(cartItems) {
-        cartItems.sumOf { it.precio.absoluteValue * it.cantidad.absoluteValue } // Use absoluteValue for safety
+        cartItems.sumOf { it.precio.absoluteValue * it.cantidad.absoluteValue }
     }
 
     CartContent(
@@ -52,6 +54,9 @@ fun CartScreen(
         total = total,
         isLoggedIn = isLoggedIn,
         onDeleteItem = { item -> viewModel.deleteItem(item) },
+        onUpdateQuantity = { item, newQuantity ->
+            viewModel.updateItemQuantity(item, newQuantity)
+        },
         onProceedToCheckout = {
             if (isLoggedIn) {
                 Toast.makeText(context, "TODO: Ir a pantalla de pago", Toast.LENGTH_SHORT).show()
@@ -69,6 +74,7 @@ fun CartContent(
     total: Int,
     isLoggedIn: Boolean,
     onDeleteItem: (ItemCarrito) -> Unit,
+    onUpdateQuantity: (ItemCarrito, Int) -> Unit,
     onProceedToCheckout: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -88,7 +94,10 @@ fun CartContent(
                 items(items, key = { it.itemId }) { item ->
                     CartItemRow(
                         item = item,
-                        onDeleteItem = { onDeleteItem(item) }
+                        onDeleteItem = { onDeleteItem(item) },
+                        onUpdateQuantity = { newQuantity ->
+                            onUpdateQuantity(item, newQuantity)
+                        }
                     )
                 }
             }
@@ -102,20 +111,28 @@ fun CartContent(
 }
 
 @Composable
-fun CartItemRow(item: ItemCarrito, onDeleteItem: () -> Unit) {
+fun CartItemRow(
+    item: ItemCarrito,
+    onDeleteItem: () -> Unit,
+    onUpdateQuantity: (Int) -> Unit
+) {
     val context = LocalContext.current
     val placeholderImageResId = remember {
+        var resId = 0
         try {
-            context.resources.getIdentifier(
-                "placeholder_image",
-                "drawable",
-                context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
-            )
+            val packageName = context.packageName
+            if (packageName.isNotEmpty()) {
+                resId = context.resources.getIdentifier(
+                    "placeholder_image",
+                    "drawable",
+                    packageName
+                )
+            }
         } catch (e: Exception) {
-            android.R.drawable.ic_menu_gallery
+            resId = 0 // Asegurar que sea 0 si hay error
         }
+        if (resId == 0) android.R.drawable.ic_menu_gallery else resId
     }
-    val finalImageResId = if (placeholderImageResId != 0) placeholderImageResId else android.R.drawable.ic_menu_gallery
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -126,14 +143,30 @@ fun CartItemRow(item: ItemCarrito, onDeleteItem: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = finalImageResId),
+                painter = painterResource(id = placeholderImageResId),
                 contentDescription = item.nombre,
                 modifier = Modifier.size(80.dp).padding(end = 16.dp),
                 contentScale = ContentScale.Crop
             )
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Cantidad: ${item.cantidad}", style = MaterialTheme.typography.bodyMedium)
+                Text(item.nombre, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { onUpdateQuantity(item.cantidad - 1) },
+                        enabled = item.cantidad > 0
+                    ) {
+                        Icon(Icons.Filled.Remove, contentDescription = "Reducir cantidad")
+                    }
+                    Text(
+                        "${item.cantidad}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    IconButton(onClick = { onUpdateQuantity(item.cantidad + 1) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Aumentar cantidad")
+                    }
+                }
                 Text(
                     "CLP $${(item.precio * item.cantidad).formatPrice()}",
                     style = MaterialTheme.typography.bodyLarge,
@@ -151,7 +184,6 @@ fun CartItemRow(item: ItemCarrito, onDeleteItem: () -> Unit) {
     }
 }
 
-// --- Fila del Total ---
 @Composable
 fun TotalRow(total: Int, isLoggedIn: Boolean, onProceedToCheckout: () -> Unit) {
     Card(
@@ -167,11 +199,13 @@ fun TotalRow(total: Int, isLoggedIn: Boolean, onProceedToCheckout: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Total:", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    "Total:",
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Text(
                     "CLP $${total.formatPrice()}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -190,13 +224,11 @@ fun TotalRow(total: Int, isLoggedIn: Boolean, onProceedToCheckout: () -> Unit) {
     }
 }
 
-// --- Función de Formato ---
 fun Int.formatPrice(): String {
-    // Implementación simple, asegúrate de que maneje números grandes si es necesario
     return try {
         this.toString().reversed().chunked(3).joinToString(".").reversed()
     } catch (e: Exception) {
-        this.toString() // Fallback
+        this.toString()
     }
 }
 
@@ -209,7 +241,14 @@ private val fakeItemsPreview = listOf(
 @Composable
 fun CartScreenPreviewLoggedIn() {
     PasteleriaMilSabores_Grupo9Theme {
-        CartContent(items = fakeItemsPreview, total = 60000, isLoggedIn = true, onDeleteItem = {}, onProceedToCheckout = {})
+        CartContent(
+            items = fakeItemsPreview,
+            total = fakeItemsPreview.sumOf { it.precio * it.cantidad },
+            isLoggedIn = true,
+            onDeleteItem = {},
+            onUpdateQuantity = { _, _ -> },
+            onProceedToCheckout = {}
+        )
     }
 }
 
@@ -217,7 +256,14 @@ fun CartScreenPreviewLoggedIn() {
 @Composable
 fun CartScreenPreviewLoggedOut() {
     PasteleriaMilSabores_Grupo9Theme {
-        CartContent(items = fakeItemsPreview, total = 60000, isLoggedIn = false, onDeleteItem = {}, onProceedToCheckout = {})
+        CartContent(
+            items = fakeItemsPreview,
+            total = fakeItemsPreview.sumOf { it.precio * it.cantidad },
+            isLoggedIn = false,
+            onDeleteItem = {},
+            onUpdateQuantity = { _, _ -> },
+            onProceedToCheckout = {}
+        )
     }
 }
 
@@ -225,6 +271,13 @@ fun CartScreenPreviewLoggedOut() {
 @Composable
 fun CartScreenPreviewEmpty() {
     PasteleriaMilSabores_Grupo9Theme {
-        CartContent(items = emptyList(), total = 0, isLoggedIn = false, onDeleteItem = {}, onProceedToCheckout = {})
+        CartContent(
+            items = emptyList(),
+            total = 0,
+            isLoggedIn = false,
+            onDeleteItem = {},
+            onUpdateQuantity = { _, _ -> },
+            onProceedToCheckout = {}
+        )
     }
 }
