@@ -1,10 +1,13 @@
 package com.example.pasteleriamilsabores_grupo9.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.pasteleriamilsabores_grupo9.data.model.Usuario
 import com.example.pasteleriamilsabores_grupo9.repository.AuthRepository
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class ProfileViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
@@ -12,6 +15,12 @@ class ProfileViewModel(private val authRepository: AuthRepository) : ViewModel()
 
     fun logout() {
         authRepository.logout()
+    }
+
+    fun updateUserImage(uri: Uri) {
+        viewModelScope.launch {
+            authRepository.updateUserImage(uri.toString())
+        }
     }
 }
 

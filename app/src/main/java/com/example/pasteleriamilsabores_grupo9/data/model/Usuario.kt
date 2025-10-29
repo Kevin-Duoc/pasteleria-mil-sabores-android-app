@@ -21,5 +21,8 @@ data class Usuario(
     val email: String,
 
     @ColumnInfo(name = "contrasena")
-    val contrasena: String
+    val contrasena: String,
+
+    @ColumnInfo(name = "foto_uri")
+    val fotoUri: String? = null
 )

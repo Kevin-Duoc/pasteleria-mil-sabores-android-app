@@ -17,7 +17,7 @@ import com.example.pasteleriamilsabores_grupo9.data.model.Usuario
         ItemCarrito::class,
         Usuario::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

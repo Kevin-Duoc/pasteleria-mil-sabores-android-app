@@ -13,9 +13,11 @@ class AuthRepository(private val usuarioDao: UsuarioDao) {
 
     suspend fun register(nombre: String, email: String, contrasena: String): Boolean {
         return try {
-            val nuevoUsuario = Usuario(nombre = nombre, email = email, contrasena = contrasena)
+            val nuevoUsuario = Usuario(nombre = nombre, email = email, contrasena = contrasena, fotoUri = null)
             usuarioDao.insertUsuario(nuevoUsuario)
-            _currentUser.value = nuevoUsuario
+
+            val usuarioRegistrado = usuarioDao.getUsuarioByEmail(email)
+            _currentUser.value = usuarioRegistrado
             true
         } catch (e: Exception) {
             _currentUser.value = null
@@ -36,6 +38,17 @@ class AuthRepository(private val usuarioDao: UsuarioDao) {
 
     fun logout() {
         _currentUser.value = null
+    }
+
+    suspend fun updateUserImage(fotoUri: String) {
+        val usuarioActual = _currentUser.value
+        if (usuarioActual != null) {
+            val usuarioActualizado = usuarioActual.copy(fotoUri = fotoUri)
+
+            usuarioDao.updateUsuario(usuarioActualizado)
+
+            _currentUser.value = usuarioActualizado
+        }
     }
 
     fun isUserLoggedIn(): Boolean {
