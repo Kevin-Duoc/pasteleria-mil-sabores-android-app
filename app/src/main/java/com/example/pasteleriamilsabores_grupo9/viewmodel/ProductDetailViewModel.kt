@@ -20,6 +20,8 @@ class ProductDetailViewModel(
     private val _product = MutableStateFlow<Producto?>(null)
     val product: StateFlow<Producto?> = _product.asStateFlow()
 
+    private val _showAddedToCartMessage = MutableStateFlow(false)
+    val showAddedToCartMessage: StateFlow<Boolean> = _showAddedToCartMessage.asStateFlow()
     fun loadProductById(productId: String) {
         viewModelScope.launch {
             productoRepository.getProductoById(productId).collectLatest { productoEncontrado ->
@@ -31,7 +33,12 @@ class ProductDetailViewModel(
     fun onAddToCartClicked(producto: Producto, cantidad: Int) {
         viewModelScope.launch {
             carritoRepository.addItemToCart(producto, cantidad)
+            _showAddedToCartMessage.value = true
         }
+    }
+
+    fun messageShown() {
+        _showAddedToCartMessage.value = false
     }
 }
 
