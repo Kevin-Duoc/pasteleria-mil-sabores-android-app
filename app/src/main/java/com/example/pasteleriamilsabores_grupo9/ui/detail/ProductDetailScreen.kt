@@ -24,6 +24,7 @@ import com.example.pasteleriamilsabores_grupo9.data.model.Producto
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductDetailViewModel
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductDetailViewModelFactory
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProductDetailScreen(
@@ -40,6 +41,10 @@ fun ProductDetailScreen(
     val productDetailViewModel: ProductDetailViewModel = viewModel(factory = factory)
 
     val product by productDetailViewModel.product.collectAsState()
+    val showMessage by productDetailViewModel.showAddedToCartMessage.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(productId) {
         if (productId != null) {
@@ -47,10 +52,23 @@ fun ProductDetailScreen(
         }
     }
 
+    LaunchedEffect(showMessage) {
+        if (showMessage) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "¡Producto añadido al carrito!",
+                    duration = SnackbarDuration.Short
+                )
+            }
+            productDetailViewModel.messageShown()
+        }
+    }
+
     ProductDetailContent(
         product = product,
         navController = navController,
         productId = productId,
+        snackbarHostState = snackbarHostState,
         onAddToCart = { p, q ->
             productDetailViewModel.onAddToCartClicked(p, q)
         }
@@ -63,9 +81,11 @@ fun ProductDetailContent(
     product: Producto?,
     navController: NavController,
     productId: String?,
+    snackbarHostState: SnackbarHostState,
     onAddToCart: (Producto, Int) -> Unit
 ) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState)},
         topBar = {
             TopAppBar(
                 title = { Text(product?.nombre ?: "Detalle del Producto") },
@@ -184,6 +204,7 @@ fun ProductDetailScreenPreview() {
             product = fakeProduct,
             navController = rememberNavController(),
             productId = fakeProduct.id,
+            snackbarHostState = remember { SnackbarHostState() },
             onAddToCart = { _, _ -> }
         )
     }
