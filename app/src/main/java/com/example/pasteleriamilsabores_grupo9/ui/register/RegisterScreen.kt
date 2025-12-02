@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -22,7 +23,6 @@ import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Gru
 import com.example.pasteleriamilsabores_grupo9.viewmodel.RegisterViewModel
 import com.example.pasteleriamilsabores_grupo9.viewmodel.RegisterViewModelFactory
 import com.example.pasteleriamilsabores_grupo9.viewmodel.RegisterUiState
-import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
@@ -34,7 +34,7 @@ fun RegisterScreen(
     )
     val viewModel: RegisterViewModel = viewModel(factory = factory)
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState) {
         if (uiState.isSuccess) {

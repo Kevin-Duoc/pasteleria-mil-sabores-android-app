@@ -3,6 +3,7 @@ package com.example.pasteleriamilsabores_grupo9.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.pasteleriamilsabores_grupo9.data.remote.dto.RegisterRequest
 import com.example.pasteleriamilsabores_grupo9.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,11 +39,21 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            val success = authRepository.register(nombre, email, contrasena)
+            // Creamos el objeto de solicitud para la API
+            val registerRequest = RegisterRequest(
+                nombreCompleto = nombre,
+                correo = email,
+                contrasena = contrasena
+                // Los otros campos (teléfono, etc.) se envían como null,
+                // ya que la pantalla de registro actual no los solicita.
+            )
+
+            val success = authRepository.register(registerRequest)
             if (success) {
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
-                _uiState.update { it.copy(isLoading = false, error = "El correo electrónico ya está registrado.") }
+                // El error puede ser por correo duplicado o un fallo de red.
+                _uiState.update { it.copy(isLoading = false, error = "No se pudo completar el registro. El correo podría ya estar en uso.") }
             }
         }
     }

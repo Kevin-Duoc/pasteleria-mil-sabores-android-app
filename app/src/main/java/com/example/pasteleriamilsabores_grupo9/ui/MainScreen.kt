@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -57,8 +58,8 @@ fun MainScreen(mainNavController: NavController) {
         )
     )
 
-    val selectedCategories by productListViewModel.selectedCategories.collectAsState()
-    val maxPrice by productListViewModel.maxPrice.collectAsState()
+    val selectedCategories by productListViewModel.selectedCategories.collectAsStateWithLifecycle()
+    val maxPrice by productListViewModel.maxPrice.collectAsStateWithLifecycle()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -221,7 +222,7 @@ fun MainScreen(mainNavController: NavController) {
                     CartScreen(navController = mainNavController)
                 }
                 composable(BottomNavItem.Cuenta.route) {
-                    ProfileScreen(navController = mainNavController)
+                    ProfileScreen(navController = bottomBarNavController)
                 }
                 composable(BottomNavItem.Mas.route) {
                     MoreScreen()
