@@ -14,6 +14,7 @@ import androidx.navigation.navArgument
 import com.example.pasteleriamilsabores_grupo9.ui.MainScreen
 import com.example.pasteleriamilsabores_grupo9.ui.detail.ProductDetailScreen
 import com.example.pasteleriamilsabores_grupo9.ui.login.LoginScreen
+import com.example.pasteleriamilsabores_grupo9.ui.map.MapScreen
 import com.example.pasteleriamilsabores_grupo9.ui.pedidos.MisPedidosScreen
 import com.example.pasteleriamilsabores_grupo9.ui.register.RegisterScreen
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = Routes.MAIN) {
 
                     composable(Routes.MAIN) { MainScreen(navController) }
+                    composable(Routes.MAP) { MapScreen() } // <-- RUTA DEL MAPA AÑADIDA
 
                     composable(Routes.LOGIN) { LoginScreen(navController) }
                     composable(Routes.REGISTER) { RegisterScreen(navController) }

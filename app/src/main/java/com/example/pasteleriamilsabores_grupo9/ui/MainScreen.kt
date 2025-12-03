@@ -188,7 +188,7 @@ fun MainScreen(mainNavController: NavController) {
                     ProfileScreen(navController = mainNavController)
                 }
                 composable(BottomNavItem.Mas.route) {
-                    MoreScreen()
+                    MoreScreen(navController = mainNavController)
                 }
             }
         }

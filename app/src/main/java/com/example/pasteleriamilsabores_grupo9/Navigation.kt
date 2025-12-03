@@ -7,5 +7,6 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val PRODUCT_DETAIL = "product_detail/{productId}"
-    const val MIS_PEDIDOS = "mis_pedidos" // <-- NUEVA RUTA
+    const val MIS_PEDIDOS = "mis_pedidos"
+    const val MAP = "map" // <-- RUTA PARA EL MAPA
 }

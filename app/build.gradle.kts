@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     // El plugin de kotlin.compose se aplica de otra forma en esta versión de Kotlin
     id("org.jetbrains.kotlin.kapt")
+}
+
+// Cargar el archivo local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 android {
@@ -17,6 +26,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Poner la clave de API a disposición del AndroidManifest.xml
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY") ?: ""
     }
 
     buildTypes {
@@ -58,6 +70,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Google Maps
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
