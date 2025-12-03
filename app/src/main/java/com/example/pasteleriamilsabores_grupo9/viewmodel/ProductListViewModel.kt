@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.CategoriaDto
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.ProductoDto
 import com.example.pasteleriamilsabores_grupo9.repository.CatalogRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +19,10 @@ sealed interface ProductListUiState {
     object Loading : ProductListUiState
 }
 
-class ProductListViewModel(private val catalogRepository: CatalogRepository) : ViewModel() {
+class ProductListViewModel(
+    private val catalogRepository: CatalogRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Main // <-- CAMBIO SEGURO
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ProductListUiState>(ProductListUiState.Loading)
     val uiState: StateFlow<ProductListUiState> = _uiState.asStateFlow()
@@ -37,7 +42,7 @@ class ProductListViewModel(private val catalogRepository: CatalogRepository) : V
     }
 
     fun loadCatalog() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) { // <-- Usamos el dispatcher
             _uiState.value = ProductListUiState.Loading
             try {
                 val products = catalogRepository.getProductos()
@@ -68,6 +73,7 @@ class ProductListViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProductListViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
+            // Esto sigue funcionando porque el dispatcher tiene un valor por defecto
             return ProductListViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

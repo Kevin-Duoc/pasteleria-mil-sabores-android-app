@@ -1,5 +1,4 @@
 [versions]
-# Se actualiza el plugin de Android Gradle a una versión moderna y compatible
 agp = "8.4.1"
 kotlin = "1.9.22"
 coreKtx = "1.13.1"
@@ -8,18 +7,21 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycle = "2.8.3"
 activityCompose = "1.9.0"
-# Se usa una BOM de Compose compatible con las demás librerías
 composeBom = "2024.05.00"
 room = "2.6.1"
 coil = "2.6.0"
 navigation = "2.7.7"
 materialIcons = "1.6.8"
+coroutinesTest = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+# Coroutines para testing (RENOMBRADO PARA CLARIDAD)
+coroutinesTest = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 
 # Lifecycle
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }

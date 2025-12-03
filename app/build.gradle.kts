@@ -3,7 +3,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // El plugin de kotlin.compose se aplica de otra forma en esta versión de Kotlin
     id("org.jetbrains.kotlin.kapt")
 }
 
@@ -27,7 +26,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Poner la clave de API a disposición del AndroidManifest.xml
         manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY") ?: ""
     }
 
@@ -51,18 +49,16 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8" // Versión de compilador compatible con las dependencias
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
 dependencies {
-    // --- DEPENDENCIAS 100% GESTIONADAS POR EL CATÁLOGO 'libs' ---
-
     // Core, Lifecycle & Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom)) // BOM gestiona las versiones de Compose
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -74,14 +70,12 @@ dependencies {
     // Google Maps
     implementation("com.google.maps.android:maps-compose:4.3.3")
 
-
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
     // Dependencias que no estaban en el catálogo y se han añadido
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    // Para inspeccionar la comunicación de red
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
@@ -95,6 +89,8 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    // AÑADIMOS LA LIBRERÍA DIRECTAMENTE PARA EVITAR PROBLEMAS CON EL CATÁLOGO
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
