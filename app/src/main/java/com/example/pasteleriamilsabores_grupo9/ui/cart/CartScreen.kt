@@ -2,7 +2,17 @@ package com.example.pasteleriamilsabores_grupo9.ui.cart
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -16,20 +26,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.pasteleriamilsabores_grupo9.PasteleriaApplication
+import com.example.pasteleriamilsabores_grupo9.R
 import com.example.pasteleriamilsabores_grupo9.Routes
-import com.example.pasteleriamilsabores_grupo9.data.model.ItemCarrito
+import com.example.pasteleriamilsabores_grupo9.data.db.entity.CarritoItem
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
 import com.example.pasteleriamilsabores_grupo9.viewmodel.CartViewModel
 import com.example.pasteleriamilsabores_grupo9.viewmodel.CartViewModelFactory
-import kotlin.math.absoluteValue
+import com.example.pasteleriamilsabores_grupo9.viewmodel.CheckoutUiState
 
 @Composable
 fun CartScreen(
@@ -39,15 +49,17 @@ fun CartScreen(
     val application = context.applicationContext as PasteleriaApplication
     val factory = CartViewModelFactory(
         application.carritoRepository,
-        application.authRepository
+        application.authRepository,
+        application.pedidoRepository // 1. Proporcionar el nuevo repositorio
     )
     val viewModel: CartViewModel = viewModel(factory = factory)
 
     val cartItems by viewModel.cartItems.collectAsState()
     val isLoggedIn by viewModel.isUserLoggedIn.collectAsState()
+    val checkoutState by viewModel.checkoutState.collectAsState() // 2. Escuchar el estado del pago
 
     val total = remember(cartItems) {
-        cartItems.sumOf { it.precio.absoluteValue * it.cantidad.absoluteValue }
+        cartItems.sumOf { it.precio * it.cantidad }
     }
 
     CartContent(
@@ -58,24 +70,65 @@ fun CartScreen(
         onUpdateQuantity = { item, newQuantity ->
             viewModel.updateItemQuantity(item, newQuantity)
         },
-        onProceedToCheckout = {
+        onProceedToCheckout = { // 4. Modificar el botón de pago
             if (isLoggedIn) {
-                Toast.makeText(context, "TODO: Ir a pantalla de pago", Toast.LENGTH_SHORT).show()
+                viewModel.onCheckoutClicked()
             } else {
                 navController.navigate(Routes.LOGIN)
             }
         }
     )
+
+    // 3. Reaccionar a los cambios de estado
+    HandleCheckoutState(checkoutState, viewModel)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HandleCheckoutState(
+    state: CheckoutUiState,
+    viewModel: CartViewModel
+) {
+    when (state) {
+        is CheckoutUiState.Loading -> {
+            Dialog(onDismissRequest = {}) { // Muestra un spinner de carga
+                CircularProgressIndicator()
+            }
+        }
+        is CheckoutUiState.Success -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetCheckoutState() },
+                title = { Text("¡Éxito!") },
+                text = { Text(state.message) },
+                confirmButton = {
+                    Button(onClick = { viewModel.resetCheckoutState() }) {
+                        Text("Aceptar")
+                    }
+                }
+            )
+        }
+        is CheckoutUiState.Error -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetCheckoutState() },
+                title = { Text("Error") },
+                text = { Text(state.message) },
+                confirmButton = {
+                    Button(onClick = { viewModel.resetCheckoutState() }) {
+                        Text("Cerrar")
+                    }
+                }
+            )
+        }
+        is CheckoutUiState.Idle -> { /* No hacer nada */ }
+    }
+}
+
 @Composable
 fun CartContent(
-    items: List<ItemCarrito>,
+    items: List<CarritoItem>,
     total: Int,
     isLoggedIn: Boolean,
-    onDeleteItem: (ItemCarrito) -> Unit,
-    onUpdateQuantity: (ItemCarrito, Int) -> Unit,
+    onDeleteItem: (CarritoItem) -> Unit,
+    onUpdateQuantity: (CarritoItem, Int) -> Unit,
     onProceedToCheckout: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -92,7 +145,7 @@ fun CartContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(items, key = { it.itemId }) { item ->
+                items(items, key = { it.productId }) { item ->
                     CartItemRow(
                         item = item,
                         onDeleteItem = { onDeleteItem(item) },
@@ -111,40 +164,18 @@ fun CartContent(
     }
 }
 
+// El resto de los composables (CartItemRow, TotalRow, etc.) no necesitan cambios.
+
 @Composable
 fun CartItemRow(
-    item: ItemCarrito,
+    item: CarritoItem,
     onDeleteItem: () -> Unit,
     onUpdateQuantity: (Int) -> Unit
 ) {
     val context = LocalContext.current
-
-    val imageResId = remember(item.imagenResIdName) {
-        try {
-            context.resources.getIdentifier(
-                item.imagenResIdName.lowercase(),
-                "drawable",
-                context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
-            )
-        } catch (e: Exception) { 0 }
-    }
-
-    val placeholderImageResId = remember {
-        try {
-            context.resources.getIdentifier(
-                "placeholder_image",
-                "drawable",
-                context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
-            )
-        } catch (e: Exception) { 0 }
-    }
-
-    val finalImageResId = if (imageResId != 0) {
-        imageResId
-    } else if (placeholderImageResId != 0) {
-        placeholderImageResId
-    } else {
-        android.R.drawable.ic_menu_gallery
+    val imageName = item.imagenUrl.substringBeforeLast('.').lowercase()
+    val imageResId = remember(imageName) {
+        context.resources.getIdentifier(imageName, "drawable", context.packageName)
     }
 
     Card(
@@ -156,7 +187,7 @@ fun CartItemRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = finalImageResId),
+                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.placeholder_image),
                 contentDescription = item.nombre,
                 modifier = Modifier.size(80.dp).padding(end = 16.dp),
                 contentScale = ContentScale.Crop
@@ -167,7 +198,7 @@ fun CartItemRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = { onUpdateQuantity(item.cantidad - 1) },
-                        enabled = item.cantidad > 0
+                        enabled = item.cantidad > 1
                     ) {
                         Icon(Icons.Filled.Remove, contentDescription = "Reducir cantidad")
                     }
@@ -246,8 +277,8 @@ fun Int.formatPrice(): String {
 }
 
 private val fakeItemsPreview = listOf(
-    ItemCarrito(itemId=1, productId = "P1", nombre = "Torta de Chocolate", precio = 45000, cantidad = 1, imagenResIdName = "torta_cuadrada_chocolate"),
-    ItemCarrito(itemId=2, productId = "P2", nombre = "Mousse de Chocolate", precio = 5000, cantidad = 3, imagenResIdName = "mousse_chocolate")
+    CarritoItem(productId = 1L, nombre = "Torta de Chocolate", precio = 45000, cantidad = 1, imagenUrl = "torta_cuadrada_chocolate.jpg"),
+    CarritoItem(productId = 2L, nombre = "Mousse de Chocolate", precio = 5000, cantidad = 3, imagenUrl = "mousse_chocolate.jpg")
 )
 
 @Preview(showBackground = true, name = "Carrito Lleno - Logueado")

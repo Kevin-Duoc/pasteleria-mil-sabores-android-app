@@ -1,43 +1,68 @@
 package com.example.pasteleriamilsabores_grupo9.repository
 
+import androidx.annotation.WorkerThread
 import com.example.pasteleriamilsabores_grupo9.data.dao.CarritoDao
-import com.example.pasteleriamilsabores_grupo9.data.model.ItemCarrito
-import com.example.pasteleriamilsabores_grupo9.data.model.Producto
+import com.example.pasteleriamilsabores_grupo9.data.db.entity.CarritoItem
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Repositorio para gestionar las operaciones del carrito de compras.
+ * Se comunica con el CarritoDao para interactuar con la base de datos local.
+ */
 class CarritoRepository(private val carritoDao: CarritoDao) {
 
-    val allCartItems: Flow<List<ItemCarrito>> = carritoDao.getAllItems()
+    // Flujo que emite la lista completa de items en el carrito. La UI se suscribirá a esto.
+    val allItems: Flow<List<CarritoItem>> = carritoDao.getAllItems()
 
-    suspend fun addItemToCart(producto: Producto, cantidad: Int) {
-        val itemExistente = carritoDao.getItemByProductId(producto.id)
+    /**
+     * Añade un item al carrito o actualiza su cantidad si ya existe.
+     *
+     * @param item El CarritoItem que se va a añadir o actualizar.
+     */
+    @Suppress("RedundantSuspendModifier")
+    @WorkerThread
+    suspend fun addToCart(item: CarritoItem) {
+        // Busca si el item ya existe en la base de datos.
+        val existingItem = carritoDao.getItemById(item.productId)
 
-        if (itemExistente == null) {
-            val newItem = ItemCarrito(
-                productId = producto.id,
-                nombre = producto.nombre,
-                precio = producto.precio,
-                cantidad = cantidad,
-                imagenResIdName = producto.imagenResIdName
-            )
-            carritoDao.insertItem(newItem)
+        if (existingItem == null) {
+            // Si no existe, lo inserta como un nuevo item.
+            carritoDao.insert(item)
         } else {
-            val updatedItem = itemExistente.copy(
-                cantidad = itemExistente.cantidad + cantidad
-            )
-            carritoDao.updateItem(updatedItem)
+            // Si ya existe, actualiza su cantidad y luego actualiza el registro en la BD.
+            existingItem.cantidad += item.cantidad
+            carritoDao.update(existingItem)
         }
     }
 
-    suspend fun updateItem(item: ItemCarrito) {
-        carritoDao.updateItem(item)
+    /**
+     * Actualiza un item existente en el carrito. Usado para cambiar la cantidad desde la UI.
+     *
+     * @param item El CarritoItem con los datos actualizados.
+     */
+    @Suppress("RedundantSuspendModifier")
+    @WorkerThread
+    suspend fun update(item: CarritoItem) {
+        carritoDao.update(item)
     }
 
-    suspend fun deleteItem(item: ItemCarrito) {
-        carritoDao.deleteItem(item)
+    /**
+     * Elimina un item específico del carrito.
+     *
+     * @param item El CarritoItem a eliminar.
+     */
+    @Suppress("RedundantSuspendModifier")
+    @WorkerThread
+    suspend fun delete(item: CarritoItem) {
+        carritoDao.delete(item)
     }
 
+    /**
+     * Vacía completamente el carrito de compras.
+     */
+    @Suppress("RedundantSuspendModifier")
+    @WorkerThread
     suspend fun clearCart() {
-        carritoDao.clearCart()
+        carritoDao.deleteAll()
     }
 }

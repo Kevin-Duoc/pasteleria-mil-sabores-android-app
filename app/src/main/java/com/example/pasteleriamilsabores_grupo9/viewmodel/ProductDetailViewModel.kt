@@ -3,13 +3,14 @@ package com.example.pasteleriamilsabores_grupo9.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.pasteleriamilsabores_grupo9.data.model.Producto
+import com.example.pasteleriamilsabores_grupo9.data.db.entity.CarritoItem
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.ProductoDto
 import com.example.pasteleriamilsabores_grupo9.repository.CarritoRepository
 import com.example.pasteleriamilsabores_grupo9.repository.CatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface ProductDetailUiState {
@@ -36,24 +37,21 @@ class ProductDetailViewModel(
                 val product = catalogRepository.getProductoById(productId)
                 _uiState.value = ProductDetailUiState.Success(product)
             } catch (e: Exception) {
-                _uiState.value = ProductDetailUiState.Error(e.message ?: "Error al cargar el producto")
+                _uiState.value = ProductDetailUiState.Error("No se pudo cargar el producto.")
             }
         }
     }
 
-    fun onAddToCartClicked(productoDto: ProductoDto, cantidad: Int) {
+    fun onAddToCartClicked(product: ProductoDto, quantity: Int) {
         viewModelScope.launch {
-            // Convertimos el DTO a la entidad de la base de datos local
-            val producto = Producto(
-                id = productoDto.codigoSku, // Usamos SKU como ID local único
-                nombre = productoDto.nombre,
-                descripcion = productoDto.descripcion,
-                precio = productoDto.precio,
-                imagenResIdName = productoDto.urlImagen,
-                stock = productoDto.stock,
-                stockCritico = productoDto.stockCritico
+            val item = CarritoItem(
+                productId = product.idProducto,
+                nombre = product.nombre,
+                precio = product.precio,
+                imagenUrl = product.urlImagen,
+                cantidad = quantity
             )
-            carritoRepository.addItemToCart(producto, cantidad)
+            carritoRepository.addToCart(item)
             _showAddedToCartMessage.value = true
         }
     }

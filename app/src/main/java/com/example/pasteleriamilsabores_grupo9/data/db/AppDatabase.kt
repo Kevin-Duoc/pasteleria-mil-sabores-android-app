@@ -7,17 +7,17 @@ import androidx.room.RoomDatabase
 import com.example.pasteleriamilsabores_grupo9.data.dao.CarritoDao
 import com.example.pasteleriamilsabores_grupo9.data.dao.ProductoDao
 import com.example.pasteleriamilsabores_grupo9.data.dao.UsuarioDao
-import com.example.pasteleriamilsabores_grupo9.data.model.ItemCarrito
+import com.example.pasteleriamilsabores_grupo9.data.db.entity.CarritoItem // Importar la nueva entidad
 import com.example.pasteleriamilsabores_grupo9.data.model.Producto
 import com.example.pasteleriamilsabores_grupo9.data.model.Usuario
 
 @Database(
     entities = [
         Producto::class,
-        ItemCarrito::class,
+        CarritoItem::class, // Registrar la nueva entidad
         Usuario::class
     ],
-    version = 8,
+    version = 9, // Incrementar la versión de la base de datos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -37,6 +37,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "pasteleriamilsabores_database"
                 )
+                    // Si no hay migración, borra la BD y la crea de nuevo.
+                    // Perfecto para desarrollo.
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

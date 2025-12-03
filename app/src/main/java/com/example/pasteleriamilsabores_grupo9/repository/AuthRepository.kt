@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.example.pasteleriamilsabores_grupo9.data.model.Usuario
-import com.example.pasteleriamilsabores_grupo9.data.remote.AuthApiService
+import com.example.pasteleriamilsabores_grupo9.data.remote.api.AuthApiService // <-- RUTA CORREGIDA
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.LoginRequest
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.RegisterRequest
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.UpdateProfileRequest

@@ -1,4 +1,4 @@
-package com.example.pasteleriamilsabores_grupo9.data.remote
+package com.example.pasteleriamilsabores_grupo9.data.remote.api
 
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.CategoriaDto
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.ProductoDto

@@ -1,12 +1,6 @@
 package com.example.pasteleriamilsabores_grupo9.ui.profile
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
@@ -21,7 +15,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -49,7 +42,7 @@ fun ProfileScreen(
         onLoginClick = { navController.navigate(Routes.LOGIN) },
         onRegisterClick = { navController.navigate(Routes.REGISTER) },
         onLogoutClick = { viewModel.logout() },
-        onChangePhotoClick = { }
+        onMisPedidosClick = { navController.navigate(Routes.MIS_PEDIDOS) } // <-- Acción de navegación
     )
 }
 
@@ -61,7 +54,7 @@ fun ProfileContent(
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onChangePhotoClick: () -> Unit
+    onMisPedidosClick: () -> Unit // <-- Nuevo parámetro para la acción
 ) {
     Box(
         modifier = Modifier
@@ -70,9 +63,9 @@ fun ProfileContent(
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(), // Ocupa el ancho disponible
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // Centra verticalmente el contenido
+            verticalArrangement = Arrangement.Center
         ) {
             if (isLoggedIn) {
                 AsyncImage(
@@ -94,7 +87,7 @@ fun ProfileContent(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 OutlinedButton(
-                    onClick = { /* TODO: Navegar a Mis Pedidos */ },
+                    onClick = onMisPedidosClick, // <-- Conectamos la acción al botón
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Mis Pedidos")

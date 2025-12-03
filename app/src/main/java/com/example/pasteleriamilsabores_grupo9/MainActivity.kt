@@ -14,6 +14,7 @@ import androidx.navigation.navArgument
 import com.example.pasteleriamilsabores_grupo9.ui.MainScreen
 import com.example.pasteleriamilsabores_grupo9.ui.detail.ProductDetailScreen
 import com.example.pasteleriamilsabores_grupo9.ui.login.LoginScreen
+import com.example.pasteleriamilsabores_grupo9.ui.pedidos.MisPedidosScreen
 import com.example.pasteleriamilsabores_grupo9.ui.register.RegisterScreen
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
 
@@ -31,36 +32,25 @@ class MainActivity : ComponentActivity() {
                     composable(Routes.LOGIN) { LoginScreen(navController) }
                     composable(Routes.REGISTER) { RegisterScreen(navController) }
 
-                    //animacion
+                    // Nueva pantalla de "Mis Pedidos"
+                    composable(Routes.MIS_PEDIDOS) { MisPedidosScreen(navController) }
+
+                    // Animación para el detalle de producto
                     composable(
                         route = Routes.PRODUCT_DETAIL,
                         arguments = listOf(navArgument("productId") { type = NavType.LongType }),
-
                         enterTransition = {
-                            slideInHorizontally(
-                                initialOffsetX = { 1000 },
-                                animationSpec = tween(300)
-                            )
+                            slideInHorizontally(initialOffsetX = { 1000 }, animationSpec = tween(300))
                         },
                         exitTransition = {
-                            slideOutHorizontally(
-                                targetOffsetX = { -1000 },
-                                animationSpec = tween(300)
-                            )
+                            slideOutHorizontally(targetOffsetX = { -1000 }, animationSpec = tween(300))
                         },
                         popEnterTransition = {
-                            slideInHorizontally(
-                                initialOffsetX = { -1000 },
-                                animationSpec = tween(300)
-                            )
+                            slideInHorizontally(initialOffsetX = { -1000 }, animationSpec = tween(300))
                         },
                         popExitTransition = {
-                            slideOutHorizontally(
-                                targetOffsetX = { 1000 },
-                                animationSpec = tween(300)
-                            )
+                            slideOutHorizontally(targetOffsetX = { 1000 }, animationSpec = tween(300))
                         }
-
                     ) { backStackEntry ->
                         val productId = backStackEntry.arguments?.getLong("productId")
                         ProductDetailScreen(navController = navController, productId = productId)

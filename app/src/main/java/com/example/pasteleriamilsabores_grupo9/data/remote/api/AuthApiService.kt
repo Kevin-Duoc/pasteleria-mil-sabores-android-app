@@ -1,4 +1,4 @@
-package com.example.pasteleriamilsabores_grupo9.data.remote
+package com.example.pasteleriamilsabores_grupo9.data.remote.api
 
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.LoginRequest
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.LoginResponse

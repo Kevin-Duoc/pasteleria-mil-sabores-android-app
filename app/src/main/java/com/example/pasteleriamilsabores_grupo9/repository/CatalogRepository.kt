@@ -1,6 +1,6 @@
 package com.example.pasteleriamilsabores_grupo9.repository
 
-import com.example.pasteleriamilsabores_grupo9.data.remote.CatalogApiService
+import com.example.pasteleriamilsabores_grupo9.data.remote.api.CatalogApiService // <-- RUTA CORREGIDA
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.CategoriaDto
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.ProductoDto
 
