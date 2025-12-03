@@ -14,7 +14,7 @@ interface AuthApiService {
     suspend fun login(@Body loginRequest: LoginRequest): LoginResponse
 
     @POST("api/v1/auth/register")
-    suspend fun register(@Body registerRequest: RegisterRequest): Response<String> // La API devuelve un String simple
+    suspend fun register(@Body registerRequest: RegisterRequest): Response<Unit>
 
     @PUT("api/v1/auth/actualizar")
     suspend fun updateUser(@Body updateProfileRequest: UpdateProfileRequest): Response<String>

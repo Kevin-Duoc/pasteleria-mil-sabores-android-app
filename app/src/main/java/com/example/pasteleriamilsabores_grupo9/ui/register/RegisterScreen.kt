@@ -38,7 +38,8 @@ fun RegisterScreen(
 
     LaunchedEffect(uiState) {
         if (uiState.isSuccess) {
-            Toast.makeText(context, "¡Registro exitoso!", Toast.LENGTH_SHORT).show()
+            // Mensaje de éxito mejorado y navegación.
+            Toast.makeText(context, "¡Registro exitoso! Por favor, inicia sesión.", Toast.LENGTH_LONG).show()
             navController.popBackStack()
         }
         uiState.error?.let { errorMessage ->
@@ -50,8 +51,9 @@ fun RegisterScreen(
     RegisterContent(
         uiState = uiState,
         navController = navController,
-        onRegisterClick = { name, email, password ->
-            viewModel.register(name, email, password)
+        onRegisterClick = { name, email, password, phone, birthDate ->
+            // Se revierte el cambio de la fecha hardcodeada.
+            viewModel.register(name, email, password, phone, birthDate)
         }
     )
 }
@@ -61,11 +63,13 @@ fun RegisterScreen(
 fun RegisterContent(
     uiState: RegisterUiState,
     navController: NavController,
-    onRegisterClick: (String, String, String) -> Unit
+    onRegisterClick: (String, String, String, String, String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var birthDate by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -121,11 +125,32 @@ fun RegisterContent(
                     singleLine = true,
                     enabled = !uiState.isLoading
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Teléfono") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    enabled = !uiState.isLoading
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = birthDate,
+                    onValueChange = { birthDate = it },
+                    label = { Text("Fecha Nacimiento (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !uiState.isLoading
+                )
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
                     onClick = {
-                        onRegisterClick(name, email, password)
+                        onRegisterClick(name, email, password, phone, birthDate)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -150,7 +175,7 @@ fun RegisterScreenPreview() {
         RegisterContent(
             uiState = RegisterUiState(),
             navController = rememberNavController(),
-            onRegisterClick = { _, _, _ -> }
+            onRegisterClick = { _, _, _, _, _ -> }
         )
     }
 }

@@ -40,117 +40,96 @@ fun ProfileScreen(
     val application = context.applicationContext as PasteleriaApplication
     val factory = ProfileViewModelFactory(application.authRepository)
     val viewModel: ProfileViewModel = viewModel(factory = factory)
-    // Con las dependencias corregidas, esta es la forma correcta y moderna
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
 
-// --- LA LÓGICA PARA CAMBIAR FOTO SE DESACTIVA TEMPORALMENTE ---
-/*
-val galleryLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.GetContent()
-) { uri: Uri? ->
-    if (uri != null) {
-        // viewModel.updateUserImage(uri)
-    }
-}
-
-val permissionLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.RequestPermission()
-) { isGranted: Boolean ->
-    if (isGranted) {
-        galleryLauncher.launch("image/*")
-    } else {
-        Toast.makeText(context, "Permiso de galería denegado", Toast.LENGTH_SHORT).show()
-    }
-}
-*/
-
-ProfileContent(
-    isLoggedIn = currentUser != null,
-    userName = currentUser?.nombre,
-    fotoUri = currentUser?.fotoUri,
-    onLoginClick = { navController.navigate(Routes.LOGIN) },
-    onRegisterClick = { navController.navigate(Routes.REGISTER) },
-    onLogoutClick = { viewModel.logout() },
-    onChangePhotoClick = { }
-)
+    ProfileContent(
+        isLoggedIn = currentUser != null,
+        userName = currentUser?.nombre,
+        fotoUri = currentUser?.fotoUri,
+        onLoginClick = { navController.navigate(Routes.LOGIN) },
+        onRegisterClick = { navController.navigate(Routes.REGISTER) },
+        onLogoutClick = { viewModel.logout() },
+        onChangePhotoClick = { }
+    )
 }
 
 @Composable
 fun ProfileContent(
-isLoggedIn: Boolean,
-userName: String?,
-fotoUri: String?,
-onLoginClick: () -> Unit,
-onRegisterClick: () -> Unit,
-onLogoutClick: () -> Unit,
-onChangePhotoClick: () -> Unit
+    isLoggedIn: Boolean,
+    userName: String?,
+    fotoUri: String?,
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onChangePhotoClick: () -> Unit
 ) {
-Box(
-    modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp),
-    contentAlignment = Alignment.Center
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(), // Ocupa el ancho disponible
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center // Centra verticalmente el contenido
+        ) {
+            if (isLoggedIn) {
+                AsyncImage(
+                    model = if (fotoUri != null) Uri.parse(fotoUri) else R.drawable.generico_male,
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
 
-        if (isLoggedIn) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            AsyncImage(
-                model = if (fotoUri != null) Uri.parse(fotoUri) else R.drawable.generico_male,
-                contentDescription = "Foto de perfil",
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
+                Text(
+                    text = "¡Hola, ${userName ?: "Usuario"}!",
+                    style = MaterialTheme.typography.headlineMedium
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "¡Hola, ${userName ?: "Usuario"}!",
-                style = MaterialTheme.typography.headlineMedium
-            )
+                OutlinedButton(
+                    onClick = { /* TODO: Navegar a Mis Pedidos */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Mis Pedidos")
+                }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedButton(
-                onClick = { /* TODO: Navegar a Mis Pedidos */ },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Mis Pedidos")
-            }
+                Button(onClick = onLogoutClick) {
+                    Text("Cerrar Sesión")
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                Text(
+                    text = "Accede a tu cuenta",
+                    style = MaterialTheme.typography.headlineMedium
+                )
 
-            Button(onClick = onLogoutClick) {
-                Text("Cerrar Sesión")
-            }
+                Spacer(modifier = Modifier.height(24.dp))
 
-        } else {
+                Button(
+                    onClick = onLoginClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Iniciar Sesión")
+                }
 
-            Text(
-                text = "Accede a tu cuenta",
-                style = MaterialTheme.typography.headlineMedium
-            )
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onLoginClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Iniciar Sesión")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onRegisterClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Registrarse")
+                Button(
+                    onClick = onRegisterClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Registrarse")
+                }
             }
         }
     }
-}
 }

@@ -7,8 +7,10 @@ import com.example.pasteleriamilsabores_grupo9.data.model.Usuario
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.UpdateProfileRequest
 import com.example.pasteleriamilsabores_grupo9.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -20,7 +22,13 @@ data class ProfileUiState(
 
 class ProfileViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
-    val currentUser: StateFlow<Usuario?> = authRepository.currentUser
+    // Se convierte el flujo "frío" en un flujo "caliente" y robusto.
+    // Esto asegura que la pantalla siempre reciba el valor más reciente del usuario.
+    val currentUser: StateFlow<Usuario?> = authRepository.currentUser.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000), // Inicia cuando la UI está visible
+        initialValue = null // El valor inicial es nulo, como antes
+    )
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()

@@ -3,88 +3,67 @@ package com.example.pasteleriamilsabores_grupo9.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.pasteleriamilsabores_grupo9.data.model.Producto
-import com.example.pasteleriamilsabores_grupo9.repository.ProductoRepository
+import com.example.pasteleriamilsabores_grupo9.data.remote.dto.CategoriaDto
+import com.example.pasteleriamilsabores_grupo9.data.remote.dto.ProductoDto
+import com.example.pasteleriamilsabores_grupo9.repository.CatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-object Categorias {
-    const val VER_TODO = "Ver Todo"
-    const val TORTAS = "Tortas"
-    const val POSTRES = "Postres"
-    const val SIN_AZUCAR = "Sin Azúcar"
-    const val SIN_GLUTEN = "Sin Gluten"
-    const val VEGANO = "Vegano"
+sealed interface ProductListUiState {
+    data class Success(val products: List<ProductoDto>) : ProductListUiState
+    object Error : ProductListUiState
+    object Loading : ProductListUiState
 }
 
-class ProductListViewModel(repository: ProductoRepository) : ViewModel() {
+class ProductListViewModel(private val catalogRepository: CatalogRepository) : ViewModel() {
 
-    private val _selectedCategories = MutableStateFlow<Set<String>>(setOf(Categorias.VER_TODO))
-    val selectedCategories: StateFlow<Set<String>> = _selectedCategories.asStateFlow()
+    private val _uiState = MutableStateFlow<ProductListUiState>(ProductListUiState.Loading)
+    val uiState: StateFlow<ProductListUiState> = _uiState.asStateFlow()
 
-    private val _maxPrice = MutableStateFlow(60000f)
-    val maxPrice: StateFlow<Float> = _maxPrice.asStateFlow()
+    private val _allProducts = MutableStateFlow<List<ProductoDto>>(emptyList())
+    private val _filteredProducts = MutableStateFlow<List<ProductoDto>>(emptyList())
+    val filteredProducts: StateFlow<List<ProductoDto>> = _filteredProducts.asStateFlow()
 
-    // --- LISTA FILTRADA (LÓGICA "O" - OR) ---
-    val products: StateFlow<List<Producto>> = combine(
-        repository.allProductos,
-        _selectedCategories,
-        _maxPrice
-    ) { allProducts, categories, price ->
+    private val _categories = MutableStateFlow<List<CategoriaDto>>(emptyList())
+    val categories: StateFlow<List<CategoriaDto>> = _categories.asStateFlow()
 
-        val priceFiltered = allProducts.filter { it.precio <= price }
+    private val _selectedCategory = MutableStateFlow<Long?>(null)
+    val selectedCategory: StateFlow<Long?> = _selectedCategory.asStateFlow()
 
-        if (categories.contains(Categorias.VER_TODO) || categories.isEmpty()) {
-            priceFiltered
-        } else {
-            priceFiltered.filter { producto ->
-                categories.any { category ->
-                    when (category) {
-                        Categorias.TORTAS -> producto.id.startsWith("TC") || producto.id.startsWith("TT") || producto.id.startsWith("TE") || producto.id.startsWith("PSA") || producto.id.startsWith("PV")
-                        Categorias.POSTRES -> producto.id.startsWith("PI") || producto.id.startsWith("PT") || producto.id.startsWith("PG")
-                        Categorias.SIN_AZUCAR -> producto.id.startsWith("PSA")
-                        Categorias.SIN_GLUTEN -> producto.id.startsWith("PG")
-                        Categorias.VEGANO -> producto.id.startsWith("PV")
-                        else -> false
-                    }
-                }
-            }
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
-    fun updatePrice(newPrice: Float) {
-        _maxPrice.value = newPrice
+    init {
+        loadCatalog()
     }
 
-    fun updateCategory(category: String, isSelected: Boolean) {
-        _selectedCategories.value = _selectedCategories.value.toMutableSet().apply {
-            if (category == Categorias.VER_TODO) {
-                clear()
-                add(Categorias.VER_TODO)
-            } else {
-                if (isSelected) {
-                    add(category)
-                    remove(Categorias.VER_TODO)
-                } else {
-                    remove(category)
-                }
-                if (isEmpty()) {
-                    add(Categorias.VER_TODO)
-                }
+    fun loadCatalog() {
+        viewModelScope.launch {
+            _uiState.value = ProductListUiState.Loading
+            try {
+                val products = catalogRepository.getProductos()
+                val categories = catalogRepository.getCategorias()
+                _allProducts.value = products
+                _filteredProducts.value = products
+                _categories.value = categories
+                _uiState.value = ProductListUiState.Success(products)
+            } catch (e: Exception) {
+                _uiState.value = ProductListUiState.Error
             }
+        }
+    }
+
+    fun filterByCategory(categoryId: Long?) {
+        _selectedCategory.value = categoryId
+        _filteredProducts.value = if (categoryId == null) {
+            _allProducts.value
+        } else {
+            _allProducts.value.filter { it.idCategoria == categoryId }
         }
     }
 }
 
 class ProductListViewModelFactory(
-    private val repository: ProductoRepository
+    private val repository: CatalogRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProductListViewModel::class.java)) {

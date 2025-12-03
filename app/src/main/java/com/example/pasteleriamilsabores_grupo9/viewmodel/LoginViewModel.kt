@@ -31,13 +31,18 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             return
         }
 
-        _uiState.update { it.copy(isLoading = true, error = null) }
+        _uiState.update { it.copy(isLoading = true, error = null, isSuccess = false) }
 
         viewModelScope.launch {
-            val success = authRepository.login(email, contrasena)
-            if (success) {
+            try {
+                // Intentar iniciar sesión. Si falla, el repositorio lanzará una excepción.
+                authRepository.login(email, contrasena)
+
+                // Si el código llega aquí, el login fue exitoso.
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            } else {
+
+            } catch (e: Exception) {
+                // Si se captura una excepción, el login falló.
                 _uiState.update { it.copy(isLoading = false, error = "Correo o contraseña incorrectos.") }
             }
         }

@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                     //animacion
                     composable(
                         route = Routes.PRODUCT_DETAIL,
-                        arguments = listOf(navArgument("productId") { type = NavType.StringType }),
+                        arguments = listOf(navArgument("productId") { type = NavType.LongType }),
 
                         enterTransition = {
                             slideInHorizontally(
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                     ) { backStackEntry ->
-                        val productId = backStackEntry.arguments?.getString("productId")
+                        val productId = backStackEntry.arguments?.getLong("productId")
                         ProductDetailScreen(navController = navController, productId = productId)
                     }
                 }

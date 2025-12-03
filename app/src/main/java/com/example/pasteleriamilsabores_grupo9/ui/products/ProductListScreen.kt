@@ -2,6 +2,7 @@ package com.example.pasteleriamilsabores_grupo9.ui.products
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -9,25 +10,30 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.pasteleriamilsabores_grupo9.R
 import com.example.pasteleriamilsabores_grupo9.PasteleriaApplication
-import com.example.pasteleriamilsabores_grupo9.data.model.Producto
+import com.example.pasteleriamilsabores_grupo9.data.remote.dto.ProductoDto
 import com.example.pasteleriamilsabores_grupo9.ui.theme.PasteleriaMilSabores_Grupo9Theme
+import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductListUiState
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductListViewModel
 import com.example.pasteleriamilsabores_grupo9.viewmodel.ProductListViewModelFactory
 
@@ -36,62 +42,93 @@ fun ProductListScreen(
     navController: NavController,
     productListViewModel: ProductListViewModel
 ) {
-    val products by productListViewModel.products.collectAsState()
-    ProductListContent(products = products, navController = navController)
-}
+    val uiState by productListViewModel.uiState.collectAsState()
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProductListContent(
-    products: List<Producto>,
-    navController: NavController
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 8.dp)
-    ) {
-        Text(
-            text = "Productos",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 8.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 160.dp),
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(bottom = 8.dp)
-        ) {
-            items(products) { producto ->
-                ProductCard(producto = producto, onClick = {
-                    navController.navigate("product_detail/${producto.id}")
-                })
+    Column(modifier = Modifier.fillMaxSize()) {
+        when (uiState) {
+            is ProductListUiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is ProductListUiState.Error -> {
+                ConnectionErrorScreen(onRetry = { productListViewModel.loadCatalog() })
+            }
+            is ProductListUiState.Success -> {
+                val filteredProducts by productListViewModel.filteredProducts.collectAsState()
+                ProductListContent(
+                    products = filteredProducts,
+                    navController = navController
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductCard(producto: Producto, onClick: () -> Unit) {
-    val context = LocalContext.current
-    @Composable
-    fun getDrawableResourceId(name: String): Int {
-        return remember(name) {
-            try {
-                context.resources.getIdentifier(
-                    name.lowercase(),
-                    "drawable",
-                    context.packageName.takeIf { it.isNotEmpty() } ?: context.packageName
-                )
-            } catch (e: Exception) { 0 }
+fun ConnectionErrorScreen(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = "Error Icon",
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "¡Ups! Algo salió mal",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "No pudimos conectar con el catálogo de Mil Sabores. Intenta más tarde.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onRetry) {
+            Text("Reintentar")
         }
     }
-    val imageResId = getDrawableResourceId(producto.imagenResIdName)
-    val placeholderResId = getDrawableResourceId("placeholder_image")
-    val finalImageResId = if (imageResId != 0) imageResId else if (placeholderResId != 0) placeholderResId else android.R.drawable.ic_menu_gallery
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProductListContent(
+    products: List<ProductoDto>,
+    navController: NavController
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 160.dp),
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(bottom = 8.dp)
+    ) {
+        items(products, key = { it.idProducto }) { producto ->
+            ProductCard(producto = producto, onClick = {
+                navController.navigate("product_detail/${producto.idProducto}")
+            })
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProductCard(producto: ProductoDto, onClick: () -> Unit) {
+    val context = LocalContext.current
+    val imageName = producto.urlImagen.substringBeforeLast('.')
+    val imageResId = remember(imageName) {
+        context.resources.getIdentifier(imageName.lowercase(), "drawable", context.packageName)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -100,7 +137,7 @@ fun ProductCard(producto: Producto, onClick: () -> Unit) {
     ) {
         Column {
             Image(
-                painter = painterResource(id = finalImageResId),
+                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.placeholder_image),
                 contentDescription = producto.nombre,
                 modifier = Modifier.fillMaxWidth().height(120.dp),
                 contentScale = ContentScale.Crop
@@ -132,10 +169,22 @@ fun Int.formatPrice(): String {
 @Composable
 fun ProductListScreenPreview() {
     val fakeProductsPreview = listOf(
-        Producto("P1", "Torta de Chocolate", "Desc", 10000, "torta_cuadrada_chocolate", 5, 2),
-        Producto("P2", "Torta de Vainilla", "Desc", 20000, "torta_circular_vainilla", 5, 2)
+        ProductoDto(1L, "P1", "Torta de Chocolate", "Desc", 10000, "torta_cuadrada_chocolate.jpg", 5, 2, 1L, "Tortas"),
+        ProductoDto(2L, "P2", "Torta de Vainilla", "Desc", 20000, "torta_circular_vainilla.jpg", 5, 2, 1L, "Tortas")
     )
+
     PasteleriaMilSabores_Grupo9Theme {
-        ProductListContent(products = fakeProductsPreview, navController = rememberNavController())
+        ProductListContent(
+            products = fakeProductsPreview,
+            navController = rememberNavController()
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ConnectionErrorScreenPreview() {
+    PasteleriaMilSabores_Grupo9Theme {
+        ConnectionErrorScreen(onRetry = {})
     }
 }

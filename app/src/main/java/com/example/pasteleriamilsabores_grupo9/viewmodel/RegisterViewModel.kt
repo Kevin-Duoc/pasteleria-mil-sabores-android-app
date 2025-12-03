@@ -22,38 +22,23 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    fun register(nombre: String, email: String, contrasena: String) {
-        if (nombre.isBlank() || email.isBlank() || contrasena.isBlank()) {
-            _uiState.update { it.copy(error = "Todos los campos son obligatorios.") }
-            return
-        }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            _uiState.update { it.copy(error = "Formato de correo inválido.") }
-            return
-        }
-        if (contrasena.length < 6) {
-            _uiState.update { it.copy(error = "La contraseña debe tener al menos 6 caracteres.") }
-            return
-        }
-
-        _uiState.update { it.copy(isLoading = true, error = null) }
+    fun register(nombre: String, correo: String, contrasena: String, telefono: String, fechaNacimiento: String) {
+        _uiState.update { it.copy(isLoading = true, error = null, isSuccess = false) }
 
         viewModelScope.launch {
-            // Creamos el objeto de solicitud para la API
-            val registerRequest = RegisterRequest(
+            val request = RegisterRequest(
                 nombreCompleto = nombre,
-                correo = email,
-                contrasena = contrasena
-                // Los otros campos (teléfono, etc.) se envían como null,
-                // ya que la pantalla de registro actual no los solicita.
+                correo = correo,
+                contrasena = contrasena,
+                telefono = telefono,
+                fechaNacimiento = fechaNacimiento
             )
-
-            val success = authRepository.register(registerRequest)
-            if (success) {
+            try {
+                authRepository.register(request)
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            } else {
-                // El error puede ser por correo duplicado o un fallo de red.
-                _uiState.update { it.copy(isLoading = false, error = "No se pudo completar el registro. El correo podría ya estar en uso.") }
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Ocurrió un error desconocido") }
             }
         }
     }
@@ -63,14 +48,12 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
     }
 }
 
-class RegisterViewModelFactory(
-    private val authRepository: AuthRepository
-) : ViewModelProvider.Factory {
+class RegisterViewModelFactory(private val authRepository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return RegisterViewModel(authRepository) as T
         }
-        throw IllegalArgumentException("Clase de ViewModel desconocida")
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

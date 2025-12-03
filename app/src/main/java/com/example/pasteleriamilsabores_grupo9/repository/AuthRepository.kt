@@ -9,14 +9,25 @@ import com.example.pasteleriamilsabores_grupo9.data.remote.AuthApiService
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.LoginRequest
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.RegisterRequest
 import com.example.pasteleriamilsabores_grupo9.data.remote.dto.UpdateProfileRequest
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 
-class AuthRepository(private val authApiService: AuthApiService, private val context: Context) {
+class AuthRepository(
+    private val authApiService: AuthApiService,
+    private val context: Context,
+    private val externalScope: CoroutineScope
+) {
 
     private val _currentUser = MutableStateFlow<Usuario?>(null)
-    val currentUser: StateFlow<Usuario?> = _currentUser.asStateFlow()
+    val currentUser: StateFlow<Usuario?> = _currentUser.asStateFlow().stateIn(
+        scope = externalScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     private var authToken: String? = null
 
@@ -35,7 +46,6 @@ class AuthRepository(private val authApiService: AuthApiService, private val con
     }
 
     init {
-        // Al iniciar el repositorio, intentar cargar la sesión guardada
         loadSession()
     }
 
@@ -50,22 +60,26 @@ class AuthRepository(private val authApiService: AuthApiService, private val con
                 id = userId,
                 nombre = userName,
                 email = userEmail,
-                contrasena = "" // Nunca guardamos la contraseña en la app
+                contrasena = ""
             )
         }
     }
 
-    suspend fun register(registerRequest: RegisterRequest): Boolean {
-        return try {
-            val response = authApiService.register(registerRequest)
-            response.isSuccessful
-        } catch (e: Exception) {
-            false
+    suspend fun register(registerRequest: RegisterRequest) {
+        val response = authApiService.register(registerRequest)
+        if (!response.isSuccessful) {
+            val errorMsg = response.errorBody()?.string()
+            val exceptionMsg = if (errorMsg.isNullOrBlank()) {
+                "Error en el registro (código: ${response.code()})"
+            } else {
+                errorMsg
+            }
+            throw Exception(exceptionMsg)
         }
     }
 
-    suspend fun login(email: String, contrasena: String): Boolean {
-        return try {
+    suspend fun login(email: String, contrasena: String) {
+        try {
             val loginRequest = LoginRequest(correo = email, contrasena = contrasena)
             val loginResponse = authApiService.login(loginRequest)
 
@@ -76,18 +90,14 @@ class AuthRepository(private val authApiService: AuthApiService, private val con
                 contrasena = ""
             )
             _currentUser.value = usuario
-
-            // Guardar sesión de forma segura
             saveSession(loginResponse.token, usuario)
-            true
         } catch (e: Exception) {
-            _currentUser.value = null
-            false
+            throw Exception("Correo o contraseña incorrectos", e)
         }
     }
 
     private fun saveSession(token: String, usuario: Usuario) {
-        authToken = token // Actualizamos el token en memoria también
+        authToken = token
         prefs.edit()
             .putString("auth_token", token)
             .putInt("user_id", usuario.id)
@@ -99,30 +109,24 @@ class AuthRepository(private val authApiService: AuthApiService, private val con
     fun logout() {
         _currentUser.value = null
         authToken = null
-        // Borrar sesión del almacenamiento seguro
         prefs.edit().clear().apply()
     }
 
     suspend fun updateUser(updateRequest: UpdateProfileRequest): Boolean {
-        return try {
-            val response = authApiService.updateUser(updateRequest)
-            if (response.isSuccessful) {
-                val usuarioActual = _currentUser.value
-                val tokenActual = authToken
-                if (usuarioActual != null && tokenActual != null) {
-                    val usuarioActualizado = usuarioActual.copy(
-                        nombre = updateRequest.nombreCompleto ?: usuarioActual.nombre
-                    )
-                    _currentUser.value = usuarioActualizado
-                    // Actualizar también la sesión guardada
-                    saveSession(tokenActual, usuarioActualizado)
-                }
-                true
-            } else {
-                false
+        val response = authApiService.updateUser(updateRequest)
+        if (response.isSuccessful) {
+            val usuarioActual = _currentUser.value
+            val tokenActual = authToken
+            if (usuarioActual != null && tokenActual != null) {
+                val usuarioActualizado = usuarioActual.copy(
+                    nombre = updateRequest.nombreCompleto ?: usuarioActual.nombre
+                )
+                _currentUser.value = usuarioActualizado
+                saveSession(tokenActual, usuarioActualizado)
             }
-        } catch (e: Exception) {
-            false
+            return true
+        } else {
+            return false
         }
     }
 
